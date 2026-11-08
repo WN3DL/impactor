@@ -204,7 +204,12 @@ impl Account {
         let iters = res.get("i").unwrap().as_signed_integer().unwrap();
         let c = res.get("c").unwrap().as_string().unwrap();
 
-        let hashed_password = Sha256::digest(password.as_bytes());
+        let protocol = res.get("sp").and_then(|v| v.as_string()).unwrap_or("s2k");
+        let digest = Sha256::digest(password.as_bytes());
+        let hashed_password: Vec<u8> = match protocol {
+            "s2k_fo" => hex::encode(digest).into_bytes(),
+            _ => digest.to_vec(),
+        };
 
         let mut password_buf = [0u8; 32];
         pbkdf2::pbkdf2::<hmac::Hmac<Sha256>>(
